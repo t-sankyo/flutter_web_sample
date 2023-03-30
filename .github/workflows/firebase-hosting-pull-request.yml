@@ -2,14 +2,43 @@
 # https://github.com/firebase/firebase-tools
 
 name: Deploy to Firebase Hosting on PR
-'on': pull_request
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: environment
+        default: 'Preview_web'
+        description: 'Either Preview_web or Staging_web or Production_web'
+        required: true
 jobs:
   build_and_preview:
-    if: '${{ github.event.pull_request.head.repo.full_name == github.repository }}'
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
     steps:
-      - uses: actions/checkout@v2
-      - run: flutter build web
+      - name: Valiables for Production
+        if: inputs.environment == 'Production_web'
+        run: |
+          echo 'ENV_ARG_DEPLOY=-P production deploy --only hosting:prod-site' >> $GITHUB_ENV
+      - name: Valiables for Staging
+        if: inputs.environment == 'Staging_web'
+        run: |
+          echo 'ENV_ARG_DEPLOY=-P staging deploy --only hosting:stag-site' >> $GITHUB_ENV
+      - name: Valiables for Preview Channel
+        if: inputs.environment == 'Preview_web'
+        run: |
+          echo 'ENV_ARG_DEPLOY=hosting:channel:deploy ${{ github.ref_name }} --expires 7d --only stag-site -P staging' >> $GITHUB_ENV
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name : Install flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: 'stable'
+          cache: true
+      - name: Download Flutter packages
+        run: flutter pub get
+      - name: flutter build web
+        run: flutter build web -t lib/main.dart --release --web-renderer html
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
