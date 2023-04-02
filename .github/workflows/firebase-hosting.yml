@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       environment:
+        description: 'Either Preview_Web or Staging_Web or Production_Web'
         type: environment
-        default: 'Preview_web'
-        description: 'Either Preview_web or Staging_web or Production_web'
+        default: Preview_web
         required: true
 jobs:
   build_and_preview:
@@ -16,23 +16,23 @@ jobs:
     environment: ${{ inputs.environment }}
     steps:
       - name: Valiables for Production
-        if: inputs.environment == 'Production_web'
+        if: inputs.environment == 'Production_Web'
         run: |
-          echo 'ENV_ARG_DEPLOY=-P production deploy --only hosting:prod-site' >> $GITHUB_ENV
+          echo 'PROJECT_ID={productionId}' >> $GITHUB_ENV
       - name: Valiables for Staging
-        if: inputs.environment == 'Staging_web'
+        if: inputs.environment == 'Staging_Web'
         run: |
-          echo 'ENV_ARG_DEPLOY=-P staging deploy --only hosting:stag-site' >> $GITHUB_ENV
+          echo 'PROJECT_ID={uuuo-tools}' >> $GITHUB_ENV
       - name: Valiables for Preview Channel
-        if: inputs.environment == 'Preview_web'
+        if: inputs.environment == 'Preview_Web'
         run: |
-          echo 'ENV_ARG_DEPLOY=hosting:channel:deploy ${{ github.ref_name }} --expires 7d --only stag-site -P staging' >> $GITHUB_ENV
+          echo 'PROJECT_ID={uuuo-tools}' >> $GITHUB_ENV
+          echo 'CHANNEL_ID=pr-${{ github.ref_name }}' >> $GITHUB_ENV
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name : Install flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: 'stable'
           cache: true
       - name: Download Flutter packages
@@ -43,4 +43,6 @@ jobs:
         with:
           repoToken: '${{ secrets.GITHUB_TOKEN }}'
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_UUUO_TOOLS }}'
-          projectId: uuuo-tools
+          projectId: ${{ secrets.PROJECT_ID }}
+          expires: 7d
+          channelId: 'pr-${{ github.ref_name }}'
