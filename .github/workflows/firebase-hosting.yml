@@ -45,4 +45,4 @@ jobs:
           firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_UUUO_TOOLS }}'
           projectId: ${{ secrets.PROJECT_ID }}
           expires: 7d
-          channelId: 'pr-${{ github.ref_name }}'
+          channelId:  ${{ secrets.CHANNEL_ID }}
